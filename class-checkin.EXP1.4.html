@@ -86,53 +86,42 @@
   // "HH:MM", based on the scanning phone's own clock.
   // ────────────────────────────────────────────────────────────
   const CONFIG = {
-    SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzDIBMoak7oTrRHqDYKEL_CJx2y20Upuin7UbL0oVHkTojmfer41L2_x7IHtTTWc0lstA/exec",
+    SCRIPT_URL: "https://script.google.com/macros/s/AKfycbx9zaM-myskQSpv4i6SyaTV9i7zFZ6oxw6klLXftKmWQ7Nr49r5KYRM4dP3tW5wDfhYfA/exec",
     SCHEDULE: {
       monday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
-        { label: "General Math",            start: "07:40", end: "09:40" },
+        { label: "General Math",           start: "07:40", end: "09:40" },
         { label: "Biology 1",               start: "10:00", end: "12:00" },
         { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
         { label: "General Science",         start: "15:00", end: "17:00" },
-        { label: "HGP",                     start: "17:00", end: "18:00" },
-        { label: "Log-out Claim",           start: "18:00", end: "19:00" }
+        { label: "HGP",                     start: "17:00", end: "18:00" }
       ],
       tuesday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
-        { label: "General Math",            start: "07:40", end: "09:40" },
+        { label: "General Math",           start: "07:40", end: "09:40" },
         { label: "Effective Com",           start: "10:00", end: "11:00" },
         { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
         { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
-        { label: "Biology 1",               start: "15:00", end: "17:00" },
-        { label: "Log-out Claim",           start: "18:00", end: "19:00" }
+        { label: "Biology 1",               start: "15:00", end: "17:00" }
       ],
       wednesday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
-        { label: "General Math",            start: "07:40", end: "09:40" },
+        { label: "General Math",           start: "07:40", end: "09:40" },
         { label: "Effective Com",           start: "10:00", end: "11:00" },
         { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
         { label: "Pagaaral ng Kasaysayan",  start: "13:00", end: "15:00" },
-        { label: "General Science",         start: "15:00", end: "17:00" },
-        { label: "Log-out Claim",           start: "18:00", end: "19:00" }
+        { label: "General Science",         start: "15:00", end: "17:00" }
       ],
       thursday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
         { label: "Pagaaral ng Kasaysayan",  start: "07:40", end: "09:40" },
         { label: "Effective Com",           start: "10:00", end: "11:00" },
         { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
         { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
-        { label: "Biology 1",               start: "15:00", end: "17:00" },
-        { label: "Log-out Claim",           start: "18:00", end: "19:00" }
+        { label: "Biology 1",               start: "15:00", end: "17:00" }
       ],
       friday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
         { label: "Pagaaral ng Kasaysayan",  start: "07:40", end: "09:40" },
         { label: "General Science",         start: "10:00", end: "12:00" },
-        { label: "Biology 1",               start: "13:00", end: "15:00" },
-        { label: "Log-out Claim",           start: "16:00", end: "19:00" }
+        { label: "Biology 1",               start: "13:00", end: "15:00" }
       ],
       saturday: [
-        { label: "Morning Deposit",         start: "6:00", end: "7:40"   },
         { label: "Pagaaral ng Kasaysayan",  start: "07:40", end: "09:40" },
         { label: "General Science",         start: "10:00", end: "12:00" },
         { label: "Biology 1",               start: "13:00", end: "23:00" }
@@ -229,11 +218,12 @@
     }
 
     try {
-      const res = await fetch(CONFIG.SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
-        body: JSON.stringify({ id, name, subject: period.label })
-      });
+      const url = new URL(CONFIG.SCRIPT_URL);
+      url.searchParams.set('id', id);
+      url.searchParams.set('name', name);
+      url.searchParams.set('subject', period.label);
+
+      const res = await fetch(url.toString()); // plain GET — avoids CORS/POST quirks with Apps Script
       const data = await res.json();
 
       if (data.status === 'success') {
@@ -252,3 +242,4 @@
 </script>
 </body>
 </html>
+
