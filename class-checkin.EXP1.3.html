@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Class Check-In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14213D;
+    --paper:#FAF7F0;
+    --success:#2BAF66;
+    --error:#E4572E;
+    --gold:#D4A94C;
+    --muted:rgba(250,247,240,0.65);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; height:100%;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    text-align:center;
+  }
+  .card{ max-width:360px; width:100%; }
+  .icon{
+    width:84px; height:84px;
+    margin:0 auto 22px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(250,247,240,0.08);
+  }
+  .icon svg{ width:42px; height:42px; }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:1.5rem;
+    margin:0 0 8px;
+  }
+  p{ color:var(--muted); margin:0; font-size:0.95rem; }
+  .time{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.85rem;
+    color:var(--gold);
+    margin-top:14px;
+  }
+  .spinner{
+    width:34px; height:34px;
+    border:3px solid rgba(250,247,240,0.25);
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin:0 auto;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #configWarning{
+    margin-top:24px;
+    padding:12px 14px;
+    background:rgba(228,87,46,0.16);
+    border:1px solid var(--error);
+    border-radius:12px;
+    font-size:0.78rem;
+    font-family:'IBM Plex Mono',monospace;
+    text-align:left;
+    display:none;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon" id="icon"><div class="spinner"></div></div>
+    <h1 id="title">Checking you in…</h1>
+    <p id="sub">Hold on a second</p>
+    <div class="time" id="time"></div>
+    <div id="configWarning">⚠ CONFIG.SCRIPT_URL isn't set. Open this file, find CONFIG near the top of the &lt;script&gt;, and paste your Apps Script Web App URL in.</div>
+  </div>
+
+<script>
+  // ────────────────────────────────────────────────────────────
+  // CONFIG — built from your Mon–Fri timetable. Edit SCHEDULE below
+  // if your times or subjects ever change. All times are 24-hour
+  // "HH:MM", based on the scanning phone's own clock.
+  // ────────────────────────────────────────────────────────────
+  const CONFIG = {
+    SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxvY2fbs0DR1se1-rqplfIRWyuMoMMl5txzrGDsDRVb749kp0FXgbAiCJPz8yzt_yLJjg/exec",
+    SCHEDULE: {
+      monday: [
+        { label: "General Math",           start: "07:40", end: "09:40" },
+        { label: "Biology 1",               start: "10:00", end: "12:00" },
+        { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
+        { label: "General Science",         start: "15:00", end: "17:00" },
+        { label: "HGP",                     start: "17:00", end: "18:00" }
+      ],
+      tuesday: [
+        { label: "General Math",           start: "07:40", end: "09:40" },
+        { label: "Effective Com",           start: "10:00", end: "11:00" },
+        { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
+        { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
+        { label: "Biology 1",               start: "15:00", end: "17:00" }
+      ],
+      wednesday: [
+        { label: "General Math",           start: "07:40", end: "09:40" },
+        { label: "Effective Com",           start: "10:00", end: "11:00" },
+        { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
+        { label: "Pagaaral ng Kasaysayan",  start: "13:00", end: "15:00" },
+        { label: "General Science",         start: "15:00", end: "17:00" }
+      ],
+      thursday: [
+        { label: "Pagaaral ng Kasaysayan",  start: "07:40", end: "09:40" },
+        { label: "Effective Com",           start: "10:00", end: "11:00" },
+        { label: "Mabisang Kom",            start: "11:00", end: "12:00" },
+        { label: "Life and Career Skills",  start: "13:00", end: "15:00" },
+        { label: "Biology 1",               start: "15:00", end: "17:00" }
+      ],
+      friday: [
+        { label: "Pagaaral ng Kasaysayan",  start: "07:40", end: "09:40" },
+        { label: "General Science",         start: "10:00", end: "12:00" },
+        { label: "Biology 1",               start: "13:00", end: "15:00" }
+      ],
+      saturday: [],
+      sunday: []
+    }
+  };
+
+  const iconEl = document.getElementById('icon');
+  const titleEl = document.getElementById('title');
+  const subEl = document.getElementById('sub');
+  const timeEl = document.getElementById('time');
+  const warnEl = document.getElementById('configWarning');
+
+  const ICONS = {
+    success: `<svg viewBox="0 0 24 24" fill="none" stroke="#2BAF66" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+    duplicate: `<svg viewBox="0 0 24 24" fill="none" stroke="#D4A94C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+    error: `<svg viewBox="0 0 24 24" fill="none" stroke="#E4572E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>`
+  };
+
+  function render(type, title, sub, time) {
+    iconEl.style.background =
+      type === 'success' ? 'rgba(43,175,102,0.16)' :
+      type === 'duplicate' ? 'rgba(212,169,76,0.16)' : 'rgba(228,87,46,0.16)';
+    iconEl.innerHTML = ICONS[type];
+    titleEl.textContent = title;
+    subEl.textContent = sub;
+    timeEl.textContent = time || '';
+  }
+
+  function getParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      id: (params.get('id') || '').trim(),
+      name: (params.get('name') || '').trim()
+    };
+  }
+
+  function toMinutes(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function getDayKey(now) {
+    return ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"][now.getDay()];
+  }
+
+  function findCurrentClass(now) {
+    const today = CONFIG.SCHEDULE[getDayKey(now)] || [];
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    return today.find(p => nowMinutes >= toMinutes(p.start) && nowMinutes < toMinutes(p.end));
+  }
+
+  function findNextClass(now) {
+    const today = CONFIG.SCHEDULE[getDayKey(now)] || [];
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const upcoming = today
+      .filter(p => toMinutes(p.start) > nowMinutes)
+      .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+    return upcoming[0];
+  }
+
+  function formatClock(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = ((h + 11) % 12) + 1;
+    return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+  }
+
+  async function checkIn() {
+    if (!CONFIG.SCRIPT_URL || CONFIG.SCRIPT_URL.indexOf('PASTE_YOUR') === 0) {
+      warnEl.style.display = 'block';
+      render('error', 'Not set up yet', 'The check-in link needs to be configured.');
+      return;
+    }
+
+    const { id, name } = getParams();
+    if (!id) {
+      render('error', 'Invalid QR code', 'No ID found in this link.');
+      return;
+    }
+
+    const now = new Date();
+    const period = findCurrentClass(now);
+
+    if (!period) {
+      const next = findNextClass(now);
+      render(
+        'error',
+        'No class right now',
+        next ? `Next: ${next.label} at ${formatClock(next.start)}` : "No more classes today"
+      );
+      return;
+    }
+
+    try {
+      const res = await fetch(CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight against Apps Script
+        body: JSON.stringify({ id, name, subject: period.label })
+      });
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        render('success', data.name ? `Welcome, ${data.name}` : period.label, `${period.label} — ${data.type}`, data.time);
+      } else if (data.status === 'duplicate') {
+        render('duplicate', data.name ? `${data.name}, already recorded` : 'Already recorded', `${period.label} — fully recorded today`, data.time);
+      } else {
+        render('error', "Couldn't check you in", data.message || 'Please tell a staff member');
+      }
+    } catch (err) {
+      render('error', 'Network error', 'Check your connection and try again');
+    }
+  }
+
+  checkIn();
+</script>
+</body>
+</html>
